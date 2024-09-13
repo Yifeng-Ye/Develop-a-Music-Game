@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Rhythm Game</title>
+<style>
+  body {
+    background-image: url('gif1.jpg'); 
+    background-size: cover; 
+    background-position: center; 
+    background-attachment: fixed; 
+    background-repeat: no-repeat; 
+    margin: 0; 
+    overflow-x: hidden;
+  }
+  .sidebar {
+    width: 300px; 
+    background-color: rgba(0, 0, 0, 0.7); 
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box; 
+    position: fixed; 
+    left: 0;
+    top: 0;
+    overflow-y: auto; 
+    z-index: 2; 
+  }
+  .contact-container {
+    margin-left: 300px;
+    text-align: center;
+    padding: 20px;
+  }
+  .contact-header {
+    margin-bottom: 50px;
+  }
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    margin: auto;
+  }
+  .input-group {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  input[type="text"],
+  input[type="email"],
+  textarea {
+    padding: 10px;
+    margin: 5px;
+    background: transparent;
+    border: 1px solid #FFF;
+    color: white;
+  }
+  .input-group input {
+    flex: 1;
+  }
+  textarea {
+    height: 100px;
+    resize: none;
+  }
+  .contact-info {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin-top: 50px;
+  }
+  .contact-info div {
+    text-align: center;
+  }
+  button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #490680;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #b662f1; 
+  }
+  .icon {
+    font-size: 24px;
+    margin: 10px 0;
+  }
+  nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0; 
+  }
+  nav ul li {
+    margin-bottom: 30px; 
+    font-size: 30px; 
+  }
+  nav ul li a {
+    color: white;
+    text-decoration: none;
+    display: block; 
+    padding: 10px 0;
+  }
+  nav ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.2); 
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <nav>
+      <ul>
+        <li><a href="index.html">Home page</a></li>
+        <li><a href="settings.html">Settings</a></li>
+        <li><a href="contact.html">Contact information</a></li>
+      </ul>
+    </nav>
+  </aside>
+  <div class="contact-container">
+    <div class="contact-header">
+      <h1>Maybe if you're looking someone for help</h1>
+      <h2>Contact Me!</h2>
+      <h3>Let's talk</h3>
+    </div>
+    <form class="contact-form" method="POST" data-netlify="true">
+      <input type="hidden" name="form-name" value="contact-form" />
+      <div class="input-group">
+        <input type="text" name="name" placeholder="Name">
+        <input type="email" name="email" placeholder="Email">
+      </div>
+      <textarea name="message" placeholder="How can I help you?"></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+    <div class="contact-info">
+      <div>
+        <span class="icon">&#9993;</span>
+        <p>1364930899@qq.com</p>
+      </div>
+      <div>
+        <span class="icon">&#128205;</span>
+        <p>Eclipes, Newport Road Lane, UK</p>
+      </div>
+      <div>
+        <span class="icon">&#128222;</span>
+        <p>(+44)04721875658</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('.contact-form');
+      form.addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        alert('Message sent successfully!');
+      });
+    });
+  </script>
+</body>
+</html>

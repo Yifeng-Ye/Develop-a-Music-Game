@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Rhythm Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-image: url('gif1.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .sidebar {
+  width: 300px; 
+  background-color: rgba(15, 15, 15, 0.7); 
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box; 
+  position: fixed; 
+  left: 0;
+  top: 0;
+  overflow-y: auto; 
+  z-index: 2; 
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0; 
+}
+nav ul li {
+  margin-bottom: 30px; 
+  font-size: 30px; 
+}
+nav ul li a {
+  color: white;
+  text-decoration: none;
+  display: block; 
+  padding: 10px 0;
+}
+nav ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.2); 
+}
+
+        .main-content {
+            margin-left: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            height: 100vh; 
+        }
+
+        .intro {
+            margin-top: 20px; 
+            margin-bottom: 20px; 
+        }
+
+        .game-title {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(81, 65, 231, 0.5);
+        }
+
+        .slide-in-text {
+            display: block;
+            animation: 5s ease-out 1s 10 slideInFromLeft;
+            color: #a89797; /* 指定颜色，例如白色 */
+            font-size: 24px; /* 可选：调整字体大小 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-top: 20px; /* 上间隔 */
+            margin-bottom: 20px; /* 下间隔 */
+        }
+
+        .start-button {
+            padding: 10px 20px;
+            font-size: 24px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgb(99, 9, 9);
+            border-radius: 10px;
+            color: green;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            margin-top: 20px; /* 上间隔 */
+            margin-bottom: 20px; /* 下间隔 */
+        }
+
+        .start-button:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="index.html">Home page</a></li>
+                <li><a href="settings.html">Settings</a></li>
+                <li><a href="contact.html">Contact information</a></li>
+                
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="main-content">
+        <div class="intro">
+            <h1 class="game-title">Rhythm Master</h1>
+            <p class="slide-in-text">Wear headphones and enjoy the music</p>
+            <a href="start-game.html" class="start-button">Start game</a>
+        </div>
+    </div>
+
+    <script>
+        function createSpark(x, y) {
+            const spark = document.createElement('div');
+            spark.className = 'spark';
+            spark.style.left = x + 'px';
+            spark.style.top = y + 'px';
+            document.body.appendChild(spark);
+
+            setTimeout(() => {
+                spark.remove();
+            }, 800); 
+        }
+    </script>
+    <div id="mouse-ring"></div>
+</body>
+</html>

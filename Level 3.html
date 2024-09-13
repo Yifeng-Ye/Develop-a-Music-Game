@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 1 - Music rhythm game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #gameArea {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .track {
+            position: absolute;
+            bottom: 0;
+            width: 25%;
+            height: 100%;
+            border: 1px solid #000;
+        }
+        .block {
+            position: absolute;
+            width: 100%;
+            height: 50px;
+            background-color: #007BFF;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 24px;
+            line-height: 50px;
+            text-align: center;
+            transition: transform 0.3s, opacity 0.3s; /* 添加过渡效果 */
+        }
+        .track1 { left: 0; }
+        .track2 { left: 25%; }
+        .track3 { left: 50%; }
+        .track4 { left: 75%; }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+        }
+        #passStatus {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: green;
+            display: none;
+        }
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: red;
+        }
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #errorMessage {
+            display: none;
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 18px;
+        }
+        #judgeLine {
+            position: absolute;
+            bottom: 20%;  /* 标准线距离底部20%处 */
+            left: 0;
+            width: 100%;
+            height: 50px;  /* 加大判定区域的高度 */
+            background-color: rgba(255, 0, 0, 0.3);  /* 半透明的红色判定区域 */
+            z-index: 1;  /* 确保标准线在方块之上 */
+        }
+        #resultModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        #resultModal button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* 动画效果：闪烁和缩放 */
+        @keyframes feedbackAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .feedback {
+            animation: feedbackAnimation 0.5s forwards; /* 触发反馈动画 */
+        }
+
+         /* 返回主菜单按钮样式 */
+         #mainMenuButtonInGame {
+            position: absolute;
+            top: 5%;
+            left: 10px;
+            padding: 5px 10px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            z-index: 3;  /* 确保按钮显示在最上层 */
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <button id="mainMenuButtonInGame">Main Menu</button>  <!-- 添加的返回主菜单按钮 -->
+        <div id="score">Score: 0</div>
+        <div id="passStatus">Pass</div>
+        <div id="gameOver">Game Over</div>
+        <div id="judgeLine"></div> <!-- 标准线 -->
+        <div class="track track1"></div>
+        <div class="track track2"></div>
+        <div class="track track3"></div>
+        <div class="track track4"></div>
+    </div>
+
+    <!-- “Start Game”按钮 -->
+    <button id="startButton">Start Game</button>
+    <div id="errorMessage">Audio playback is blocked, please click the button and try to restart.</div>
+
+    <!-- 音频元素 -->
+    <audio id="gameMusic" src="yinghuozhisen.mp3" preload="auto"></audio>
+
+    <!-- 结果弹窗 -->
+    <div id="resultModal">
+        <div id="resultMessage"></div>
+        <button id="nextLevelButton">Next level</button>
+        <button id="retryButton">Restart</button>
+        <button id="mainMenuButton">Back to main menu</button>
+    </div>
+
+    <script>
+        let score = 0;  // 记录得分
+        let passingScore = 175;  // 及格分数
+        let gameInterval;  // 游戏方块生成的时间间隔控制
+        let gameOver = false;  // 游戏是否结束的标志
+        let activeBlocks = [];  // 活动方块数组，用于追踪当前正在下落的方块
+
+        const gameArea = document.getElementById('gameArea');  // 游戏区域
+        const scoreDisplay = document.getElementById('score');  // 显示得分
+        const passStatusDisplay = document.getElementById('passStatus');  // 显示及格状态
+        const gameOverDisplay = document.getElementById('gameOver');  // 游戏结束显示
+        const gameMusic = document.getElementById('gameMusic');  // 音乐元素
+        const startButton = document.getElementById('startButton');  // 开始按钮
+        const errorMessage = document.getElementById('errorMessage');  // 错误信息
+        const judgeLine = document.getElementById('judgeLine');  // 判定标准线
+        const resultModal = document.getElementById('resultModal');  // 结果弹窗
+        const resultMessage = document.getElementById('resultMessage');  // 结果信息
+        const nextLevelButton = document.getElementById('nextLevelButton');  // 下一关按钮
+        const retryButton = document.getElementById('retryButton');  // 重新开始按钮
+        const mainMenuButton = document.getElementById('mainMenuButton');  // 回到主菜单按钮
+
+        const tracks = [
+            document.querySelector('.track1'),
+            document.querySelector('.track2'),
+            document.querySelector('.track3'),
+            document.querySelector('.track4')
+        ];  // 轨道元素
+
+        const keys = ['w', 'a', 's', 'd'];  // 绑定的键位
+
+        // 处理音频播放和分析
+        async function setupAudio() {
+            const source = audioCtx.createMediaElementSource(gameMusic); // 创建音频源
+            const analyser = audioCtx.createAnalyser(); // 创建音频分析器
+            source.connect(analyser); // 连接音频源和分析器
+            analyser.connect(audioCtx.destination); // 连接分析器到音频输出
+            analyser.fftSize = 256; // 设置FFT大小，影响频谱数据的分辨率
+
+            const bufferLength = analyser.frequencyBinCount; // 获取频率数据大小
+            const dataArray = new Uint8Array(bufferLength); // 创建数据数组用于存储频率数据
+
+            // 递归函数，用于不断分析音频数据并生成方块
+            function analyzeAndCreateBlocks() {
+                if (gameOver) return; // 如果游戏结束，停止分析
+                analyser.getByteFrequencyData(dataArray); // 获取频谱数据
+                
+                // 简单地根据频谱数据的强度生成方块
+                const sum = dataArray.slice(0, 10).reduce((a, b) => a + b, 0); // 计算前10个频段的总和
+                if (sum > 500) {  // 如果频谱强度超过500，生成一个方块
+                    const trackIndex = Math.floor(Math.random() * tracks.length); // 随机选择一个轨道
+                    createBlock(tracks[trackIndex], keys[trackIndex], trackIndex); // 创建方块
+                }
+                requestAnimationFrame(analyzeAndCreateBlocks); // 请求下一帧继续分析
+            }
+            analyzeAndCreateBlocks(); // 开始分析和生成方块
+        }
+
+        // 键盘事件处理器
+        function handleKeyPress(event) {
+            if (gameOver) return;  // 如果游戏已经结束，停止处理
+
+            const keyIndex = keys.indexOf(event.key.toLowerCase());  // 查找按键对应的轨道索引
+            if (keyIndex !== -1) {
+                const blocks = activeBlocks.filter(block => block.trackIndex === keyIndex);  // 获取该轨道上的活动方块
+                if (blocks.length > 0) {
+                    const block = blocks[0];  // 获取最接近的方块
+                    const blockRect = block.element.getBoundingClientRect();
+                    const judgeRect = judgeLine.getBoundingClientRect();
+                    
+                    // 判断方块是否在标准线的判定范围内
+                    if (blockRect.bottom >= judgeRect.top && blockRect.top <= judgeRect.bottom) {
+                        block.element.classList.add('feedback');  // 添加反馈动画
+
+                        // 等待动画结束后移除方块
+                        block.element.addEventListener('animationend', () => {
+                            block.element.remove();  // 移除方块
+                        });
+                        activeBlocks = activeBlocks.filter(b => b !== block);  // 从活动方块数组中移除
+                        score++;  // 增加得分
+                        scoreDisplay.textContent = `Score: ${score}`;  // 更新得分显示
+
+                        // 如果得分超过及格分数，显示及格状态
+                        if (score >= passingScore) {
+                            passStatusDisplay.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        }
+
+        // 创建方块的函数
+        function createBlock(track, keyLabel, trackIndex) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.textContent = keyLabel.toUpperCase();  // 设置方块上的按键标签
+            block.style.top = '0px';
+            track.appendChild(block);
+
+            const blockObject = {
+                element: block,
+                trackIndex: trackIndex,
+                interval: null
+            };
+
+            moveBlock(blockObject);  // 让方块开始移动
+            activeBlocks.push(blockObject);  // 将方块添加到活动方块数组中
+        }
+
+        // 控制方块移动的函数
+        function moveBlock(blockObject) {
+            blockObject.interval = setInterval(() => {
+                const top = parseInt(blockObject.element.style.top);
+                if (top < window.innerHeight) {
+                    blockObject.element.style.top = top + 2 + 'px';  // 控制方块下落速度
+                } else {
+                    blockObject.element.remove();  // 当方块到达底部时移除
+                    activeBlocks = activeBlocks.filter(b => b !== blockObject);  // 从活动方块数组中移除
+                    clearInterval(blockObject.interval);
+                }
+            }, 10);  // 加快刷新频率，保证位置判断更准确
+        }
+
+        // 开始游戏的函数
+        function startGame() {
+            startButton.style.display = 'none';  // 隐藏“Start Game”按钮
+            errorMessage.style.display = 'none';  // 隐藏错误信息
+            gameMusic.play().then(() => {
+                gameOver = false;  // 标记游戏未结束
+                document.addEventListener('keydown', handleKeyPress);  // 开始监听键盘按键事件
+
+                gameInterval = setInterval(() => {
+                    const trackIndex = Math.floor(Math.random() * tracks.length);
+                    createBlock(tracks[trackIndex], keys[trackIndex], trackIndex);  // 随机生成方块
+                }, 1000);
+
+                // 监听音乐结束事件
+                gameMusic.addEventListener('ended', () => {
+                    clearInterval(gameInterval);  // 停止生成方块
+                    gameOver = true;  // 标记游戏结束
+                    gameOverDisplay.style.display = 'block';  // 显示“Game Over”
+                    showResult();  // 显示结果弹窗
+                });
+            }).catch(error => {
+                console.log("Audio playback blocked or failed:", error);
+                errorMessage.style.display = 'block';  // 显示错误信息
+                startButton.style.display = 'block';  // 显示按钮，允许用户重试
+            });
+        }
+
+        // 显示结果弹窗的函数
+        function showResult() {
+            resultModal.style.display = 'block';
+            if (score >= passingScore) {
+                resultMessage.textContent = "Congratulations on your pass!";
+                nextLevelButton.style.display = 'inline-block';
+                retryButton.style.display = 'none';
+            } else {
+                resultMessage.textContent = "Sorry, you didn't pass.";
+                nextLevelButton.style.display = 'none';
+                retryButton.style.display = 'inline-block';
+            }
+        }
+
+        // 重新开始游戏的函数
+        function retryGame() {
+            location.reload();  // 重新加载页面以重置游戏
+        }
+
+       
+
+        // 返回主菜单的函数
+        function goToMainMenu() {
+            location.href = "index.html";  // 假设主菜单页面为index.html
+        }
+
+        // 监听按钮事件
+        mainMenuButtonInGame.addEventListener('click', goToMainMenu);  // 添加对游戏内返回主菜单按钮的监听
+        nextLevelButton.addEventListener('click', nextLevel);
+        retryButton.addEventListener('click', retryGame);
+        mainMenuButton.addEventListener('click', goToMainMenu);
+
+        // 监听“Start Game”按钮的点击事件
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 1 - Music rhythm game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #gameArea {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .track {
+            position: absolute;
+            bottom: 0;
+            width: 25%;
+            height: 100%;
+            border: 1px solid #000;
+        }
+        .block {
+            position: absolute;
+            width: 100%;
+            height: 50px;
+            background-color: #007BFF;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 24px;
+            line-height: 50px;
+            text-align: center;
+            transition: transform 0.3s, opacity 0.3s; /* Add transition effect */
+        }
+        .track1 { left: 0; }
+        .track2 { left: 25%; }
+        .track3 { left: 50%; }
+        .track4 { left: 75%; }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+        }
+        #passStatus {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: green;
+            display: none;
+        }
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: red;
+        }
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #errorMessage {
+            display: none;
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 18px;
+        }
+        #judgeLine {
+            position: absolute;
+            bottom: 20%;  /* The standard line is 20% from the bottom */
+            left: 0;
+            width: 100%;
+            height: 50px;  /* Increase the height of the decision area */
+            background-color: rgba(255, 0, 0, 0.3);  /* Translucent red decision area*/
+            z-index: 1;  /* Make sure the standard line is above the square */
+        }
+        #resultModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        #resultModal button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Animation effects: Flicker and zoom */
+        @keyframes feedbackAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .feedback {
+            animation: feedbackAnimation 0.5s forwards; /* Trigger feedback animation*/
+        }
+
+         /* Returns the main menu button style */
+         #mainMenuButtonInGame {
+            position: absolute;
+            top: 5%;
+            left: 10px;
+            padding: 5px 10px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            z-index: 3;  /* Make sure the button is displayed at the top */
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <button id="mainMenuButtonInGame">Main Menu</button>  <!-- Added back to main menu button -->
+        <div id="score">Score: 0</div>
+        <div id="passStatus">Pass</div>
+        <div id="gameOver">Game Over</div>
+        <div id="judgeLine"></div> <!-- Standard line -->
+        <div class="track track1"></div>
+        <div class="track track2"></div>
+        <div class="track track3"></div>
+        <div class="track track4"></div>
+    </div>
+
+    <!-- “Start Game”button -->
+    <button id="startButton">Start Game</button>
+    <div id="errorMessage">Audio playback is blocked, please click the button and try to restart.</div>
+
+    <!-- Audio element -->
+    <audio id="gameMusic" src="Kanong.mp3" preload="auto"></audio>
+
+    <!-- Result popup-->
+    <div id="resultModal">
+        <div id="resultMessage"></div>
+        <button id="nextLevelButton">Next level</button>
+        <button id="retryButton">Restart</button>
+        <button id="mainMenuButton">Back to main menu</button>
+    </div>
+
+    <script>
+        let score = 0;  // Record score
+        let passingScore = 100;  // Passing score
+        let gameInterval;  // Game block generation time interval control
+        let gameOver = false;  // A sign of whether the game is over
+        let activeBlocks = [];  // An array of active blocks to track which blocks are currently falling
+
+        const gameArea = document.getElementById('gameArea');  // Game area
+        const scoreDisplay = document.getElementById('score');  // Show score
+        const passStatusDisplay = document.getElementById('passStatus');  // Show pass status
+        const gameOverDisplay = document.getElementById('gameOver');  // End of game display
+        const gameMusic = document.getElementById('gameMusic');  // Musical element
+        const startButton = document.getElementById('startButton');  // Start button
+        const errorMessage = document.getElementById('errorMessage');  // Error message
+        const judgeLine = document.getElementById('judgeLine');  // Criterion line
+        const resultModal = document.getElementById('resultModal');  // Result popup
+        const resultMessage = document.getElementById('resultMessage');  // Result information
+        const nextLevelButton = document.getElementById('nextLevelButton');  // Next level button
+        const retryButton = document.getElementById('retryButton');  // Restart button
+        const mainMenuButton = document.getElementById('mainMenuButton');  // Go back to the main menu button
+
+        const tracks = [
+            document.querySelector('.track1'),
+            document.querySelector('.track2'),
+            document.querySelector('.track3'),
+            document.querySelector('.track4')
+        ];  // track element
+
+        const keys = ['w', 'a', 's', 'd'];  // Binding keys
+
+         // Handles audio playback and analysis
+         async function setupAudio() {
+            const source = audioCtx.createMediaElementSource(gameMusic); // Create audio source
+            const analyser = audioCtx.createAnalyser(); // Create an audio analyzer
+            source.connect(analyser); // Connect the audio source and analyzer
+            analyser.connect(audioCtx.destination); 
+            analyser.fftSize = 256; 
+
+            const bufferLength = analyser.frequencyBinCount; 
+            const dataArray = new Uint8Array(bufferLength); 
+
+            // Recursive function that continuously analyzes audio data and generates blocks
+            function analyzeAndCreateBlocks() {
+                if (gameOver) return; 
+                analyser.getByteFrequencyData(dataArray); // Acquire spectrum data
+                
+                // Simply generate blocks based on the intensity of the spectral data
+                const sum = dataArray.slice(0, 10).reduce((a, b) => a + b, 0); 
+                if (sum > 500) {  // If the spectral intensity exceeds 500, a block is generated
+                    const trackIndex = Math.floor(Math.random() * tracks.length); // Choose a track at random
+                    createBlock(tracks[trackIndex], keys[trackIndex], trackIndex); 
+                }
+                requestAnimationFrame(analyzeAndCreateBlocks); 
+            }
+            analyzeAndCreateBlocks(); 
+        }
+
+        // Keyboard event handler
+        function handleKeyPress(event) {
+            if (gameOver) return;  // 如果游戏已经结束，停止处理
+
+            const keyIndex = keys.indexOf(event.key.toLowerCase());  // 查找按键对应的轨道索引
+            if (keyIndex !== -1) {
+                const blocks = activeBlocks.filter(block => block.trackIndex === keyIndex);  // 获取该轨道上的活动方块
+                if (blocks.length > 0) {
+                    const block = blocks[0];  // 获取最接近的方块
+                    const blockRect = block.element.getBoundingClientRect();
+                    const judgeRect = judgeLine.getBoundingClientRect();
+                    
+                    // 判断方块是否在标准线的判定范围内
+                    if (blockRect.bottom >= judgeRect.top && blockRect.top <= judgeRect.bottom) {
+                        block.element.classList.add('feedback');  // 添加反馈动画
+
+                        // 等待动画结束后移除方块
+                        block.element.addEventListener('animationend', () => {
+                            block.element.remove();  // 移除方块
+                        });
+                        activeBlocks = activeBlocks.filter(b => b !== block);  // 从活动方块数组中移除
+                        score++;  // 增加得分
+                        scoreDisplay.textContent = `Score: ${score}`;  // 更新得分显示
+
+                        // 如果得分超过及格分数，显示及格状态
+                        if (score >= passingScore) {
+                            passStatusDisplay.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        }
+
+        // 创建方块的函数
+        function createBlock(track, keyLabel, trackIndex) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.textContent = keyLabel.toUpperCase();  // 设置方块上的按键标签
+            block.style.top = '0px';
+            track.appendChild(block);
+
+            const blockObject = {
+                element: block,
+                trackIndex: trackIndex,
+                interval: null
+            };
+
+            moveBlock(blockObject);  // 让方块开始移动
+            activeBlocks.push(blockObject);  // 将方块添加到活动方块数组中
+        }
+
+        // 控制方块移动的函数
+        function moveBlock(blockObject) {
+            blockObject.interval = setInterval(() => {
+                const top = parseInt(blockObject.element.style.top);
+                if (top < window.innerHeight) {
+                    blockObject.element.style.top = top + 2 + 'px';  // 控制方块下落速度
+                } else {
+                    blockObject.element.remove();  // 当方块到达底部时移除
+                    activeBlocks = activeBlocks.filter(b => b !== blockObject);  // 从活动方块数组中移除
+                    clearInterval(blockObject.interval);
+                }
+            }, 10);  // 加快刷新频率，保证位置判断更准确
+        }
+
+        // 开始游戏的函数
+        function startGame() {
+            startButton.style.display = 'none';  // 隐藏“Start Game”按钮
+            errorMessage.style.display = 'none';  // 隐藏错误信息
+            gameMusic.play().then(() => {
+                gameOver = false;  // 标记游戏未结束
+                document.addEventListener('keydown', handleKeyPress);  // 开始监听键盘按键事件
+
+                gameInterval = setInterval(() => {
+                    const trackIndex = Math.floor(Math.random() * tracks.length);
+                    createBlock(tracks[trackIndex], keys[trackIndex], trackIndex);  // 随机生成方块
+                }, 1000);
+
+                // 监听音乐结束事件
+                gameMusic.addEventListener('ended', () => {
+                    clearInterval(gameInterval);  // 停止生成方块
+                    gameOver = true;  // 标记游戏结束
+                    gameOverDisplay.style.display = 'block';  // 显示“Game Over”
+                    showResult();  // 显示结果弹窗
+                });
+            }).catch(error => {
+                console.log("Audio playback blocked or failed:", error);
+                errorMessage.style.display = 'block';  // 显示错误信息
+                startButton.style.display = 'block';  // 显示按钮，允许用户重试
+            });
+        }
+
+        // 显示结果弹窗的函数
+        function showResult() {
+            resultModal.style.display = 'block';
+            if (score >= passingScore) {
+                resultMessage.textContent = "Congratulations on your pass!";
+                nextLevelButton.style.display = 'inline-block';
+                retryButton.style.display = 'none';
+            } else {
+                resultMessage.textContent = "Sorry, you didn't pass.";
+                nextLevelButton.style.display = 'none';
+                retryButton.style.display = 'inline-block';
+            }
+        }
+
+        // 重新开始游戏的函数
+        function retryGame() {
+            location.reload();  // 重新加载页面以重置游戏
+        }
+
+        // 进入下一关的函数
+        function nextLevel() {
+            location.href = "Level 2.html";  // 跳转到下一关页面
+        }
+
+        // 返回主菜单的函数
+        function goToMainMenu() {
+            location.href = "index.html";  // 假设主菜单页面为index.html
+        }
+
+        // 监听按钮事件
+        mainMenuButtonInGame.addEventListener('click', goToMainMenu);  // 添加对游戏内返回主菜单按钮的监听
+        nextLevelButton.addEventListener('click', nextLevel);
+        retryButton.addEventListener('click', retryGame);
+        mainMenuButton.addEventListener('click', goToMainMenu);
+
+        // 监听“Start Game”按钮的点击事件
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>

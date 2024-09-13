@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Rhythm Game</title>
+    <style>
+ body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-image: url('gif1.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+.sidebar {
+  width: 300px; 
+  background-color: rgba(0, 0, 0, 0.7); 
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box; 
+  position: fixed; 
+  left: 0;
+  top: 0;
+  overflow-y: auto; 
+  z-index: 2; 
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0; 
+}
+nav ul li {
+  margin-bottom: 30px; 
+  font-size: 30px; 
+}
+nav ul li a {
+  color: white;
+  text-decoration: none;
+  display: block; 
+  padding: 10px 0;
+}
+nav ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.2); 
+}
+
+
+body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 300px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        .slider {
+            width: 100%;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="index.html">Home page</a></li>
+                <li><a href="settings.html">Settings</a></li>
+                <li><a href="contact.html">Contact information</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="container">
+        <h1>Game Settings</h1>
+        <label for="volume">Game Volume: <span id="volumeValue">50</span>%</label>
+        <input type="range" id="volume" class="slider" min="0" max="100" value="50">
+        <audio id="gameAudio" loop>
+            <source src="path/to/your/game-audio.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <button onclick="playAudio()">Play Audio</button>
+        <button onclick="pauseAudio()">Pause Audio</button>
+    </div>
+    <script>
+        const volumeSlider = document.getElementById('volume');
+        const volumeValue = document.getElementById('volumeValue');
+        const gameAudio = document.getElementById('gameAudio');
+
+        volumeSlider.addEventListener('input', function() {
+            const volume = volumeSlider.value;
+            volumeValue.textContent = volume;
+            gameAudio.volume = volume / 100;
+        });
+
+        function playAudio() {
+            gameAudio.play();
+        }
+
+        function pauseAudio() {
+            gameAudio.pause();
+        }
+    </script>
+</body>
+</html>
